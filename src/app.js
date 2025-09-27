@@ -596,3 +596,109 @@ app.get('/reports/:id', (req, res) => {
   }
 });
 
+
+//Método POST – Creación de recursos//
+
+// ================== USERS ==================
+// POST /users
+app.post('/users', (req, res) => {
+  try {
+    const { name, email } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({ error: "Faltan datos obligatorios: name y email" });
+    }
+
+    const newUser = { id: Date.now(), name, email };
+    users.push(newUser);
+
+    res.status(201).json({ message: "Usuario creado", user: newUser });
+  } catch (err) {
+    res.status(500).json({ error: "Error al crear usuario", details: err.message });
+  }
+});
+
+// ================== EXERCISES ==================
+// POST /exercises
+app.post('/exercises', (req, res) => {
+  try {
+    const { name, category, muscle } = req.body;
+
+    if (!name || !category || !muscle) {
+      return res.status(400).json({ error: "Faltan datos obligatorios: name, category y muscle" });
+    }
+
+    const newExercise = { id: Date.now(), name, category, muscle };
+    exercises.push(newExercise);
+
+    res.status(201).json({ message: "Ejercicio creado", exercise: newExercise });
+  } catch (err) {
+    res.status(500).json({ error: "Error al crear ejercicio", details: err.message });
+  }
+});
+
+// ================== PLANS ==================
+// POST /plans
+app.post('/plans', (req, res) => {
+  try {
+    const { userId, name } = req.body;
+
+    if (!userId || !name) {
+      return res.status(400).json({ error: "Faltan datos obligatorios: userId y name" });
+    }
+
+    const newPlan = { id: Date.now(), userId: Number(userId), name };
+    plans.push(newPlan);
+
+    res.status(201).json({ message: "Plan creado", plan: newPlan });
+  } catch (err) {
+    res.status(500).json({ error: "Error al crear plan", details: err.message });
+  }
+});
+
+// ================== SESSIONS ==================
+// POST /sessions
+app.post('/sessions', (req, res) => {
+  try {
+    const { planId, date, time } = req.body;
+
+    if (!planId || !date || !time) {
+      return res.status(400).json({ error: "Faltan datos obligatorios: planId, date y time" });
+    }
+
+    const newSession = { id: Date.now(), planId: Number(planId), date, time };
+    sessions.push(newSession);
+
+    res.status(201).json({ message: "Sesión creada", session: newSession });
+  } catch (err) {
+    res.status(500).json({ error: "Error al crear sesión", details: err.message });
+  }
+});
+
+// ================== REPORTS ==================
+// POST /reports
+app.post('/reports', (req, res) => {
+  try {
+    const { userId, start, end, summary } = req.body;
+
+    if (!userId || !start || !end || !summary) {
+      return res.status(400).json({ error: "Faltan datos obligatorios: userId, start, end y summary" });
+    }
+
+    const newReport = {
+      id: Date.now(),
+      userId: Number(userId),
+      start,
+      end,
+      summary,
+      sessions: 0,
+      calories: 0
+    };
+
+    reports.push(newReport);
+
+    res.status(201).json({ message: "Informe creado", report: newReport });
+  } catch (err) {
+    res.status(500).json({ error: "Error al crear informe", details: err.message });
+  }
+});
