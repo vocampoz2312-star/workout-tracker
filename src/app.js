@@ -702,3 +702,225 @@ app.post('/reports', (req, res) => {
     res.status(500).json({ error: "Error al crear informe", details: err.message });
   }
 });
+
+
+//Métodos PUT y PATCH – Actualización de recursos//
+
+// ================== USERS ==================
+
+// PUT /users/:id → actualización completa
+app.put('/users/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { name, email } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({ error: "Faltan datos obligatorios: name y email" });
+    }
+
+    const userIndex = users.findIndex(u => u.id === id);
+    if (userIndex === -1) return res.status(404).json({ error: "Usuario no encontrado" });
+
+    users[userIndex] = { id, name, email };
+    res.status(200).json({ message: "Usuario actualizado completamente", user: users[userIndex] });
+  } catch (err) {
+    res.status(500).json({ error: "Error al actualizar usuario", details: err.message });
+  }
+});
+
+// PATCH /users/:id → actualización parcial
+app.patch('/users/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { name, email } = req.body;
+
+    const user = users.find(u => u.id === id);
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+
+    if (name) user.name = name;
+    if (email) user.email = email;
+
+    res.status(200).json({ message: "Usuario actualizado parcialmente", user });
+  } catch (err) {
+    res.status(500).json({ error: "Error al actualizar usuario", details: err.message });
+  }
+});
+
+
+// ================== EXERCISES ==================
+
+// PUT /exercises/:id
+app.put('/exercises/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { name, category, muscle } = req.body;
+
+    if (!name || !category || !muscle) {
+      return res.status(400).json({ error: "Faltan datos obligatorios: name, category y muscle" });
+    }
+
+    const index = exercises.findIndex(e => e.id === id);
+    if (index === -1) return res.status(404).json({ error: "Ejercicio no encontrado" });
+
+    exercises[index] = { id, name, category, muscle };
+    res.status(200).json({ message: "Ejercicio actualizado completamente", exercise: exercises[index] });
+  } catch (err) {
+    res.status(500).json({ error: "Error al actualizar ejercicio", details: err.message });
+  }
+});
+
+// PATCH /exercises/:id
+app.patch('/exercises/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { name, category, muscle } = req.body;
+
+    const exercise = exercises.find(e => e.id === id);
+    if (!exercise) return res.status(404).json({ error: "Ejercicio no encontrado" });
+
+    if (name) exercise.name = name;
+    if (category) exercise.category = category;
+    if (muscle) exercise.muscle = muscle;
+
+    res.status(200).json({ message: "Ejercicio actualizado parcialmente", exercise });
+  } catch (err) {
+    res.status(500).json({ error: "Error al actualizar ejercicio", details: err.message });
+  }
+});
+
+
+// ================== PLANS ==================
+
+// PUT /plans/:id
+app.put('/plans/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { userId, name } = req.body;
+
+    if (!userId || !name) {
+      return res.status(400).json({ error: "Faltan datos obligatorios: userId y name" });
+    }
+
+    const index = plans.findIndex(p => p.id === id);
+    if (index === -1) return res.status(404).json({ error: "Plan no encontrado" });
+
+    plans[index] = { id, userId: Number(userId), name };
+    res.status(200).json({ message: "Plan actualizado completamente", plan: plans[index] });
+  } catch (err) {
+    res.status(500).json({ error: "Error al actualizar plan", details: err.message });
+  }
+});
+
+// PATCH /plans/:id
+app.patch('/plans/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { userId, name } = req.body;
+
+    const plan = plans.find(p => p.id === id);
+    if (!plan) return res.status(404).json({ error: "Plan no encontrado" });
+
+    if (userId) plan.userId = Number(userId);
+    if (name) plan.name = name;
+
+    res.status(200).json({ message: "Plan actualizado parcialmente", plan });
+  } catch (err) {
+    res.status(500).json({ error: "Error al actualizar plan", details: err.message });
+  }
+});
+
+
+// ================== SESSIONS ==================
+
+// PUT /sessions/:id
+app.put('/sessions/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { planId, date, time } = req.body;
+
+    if (!planId || !date || !time) {
+      return res.status(400).json({ error: "Faltan datos obligatorios: planId, date y time" });
+    }
+
+    const index = sessions.findIndex(s => s.id === id);
+    if (index === -1) return res.status(404).json({ error: "Sesión no encontrada" });
+
+    sessions[index] = { id, planId: Number(planId), date, time };
+    res.status(200).json({ message: "Sesión actualizada completamente", session: sessions[index] });
+  } catch (err) {
+    res.status(500).json({ error: "Error al actualizar sesión", details: err.message });
+  }
+});
+
+// PATCH /sessions/:id
+app.patch('/sessions/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { planId, date, time } = req.body;
+
+    const session = sessions.find(s => s.id === id);
+    if (!session) return res.status(404).json({ error: "Sesión no encontrada" });
+
+    if (planId) session.planId = Number(planId);
+    if (date) session.date = date;
+    if (time) session.time = time;
+
+    res.status(200).json({ message: "Sesión actualizada parcialmente", session });
+  } catch (err) {
+    res.status(500).json({ error: "Error al actualizar sesión", details: err.message });
+  }
+});
+
+
+// ================== REPORTS ==================
+
+// PUT /reports/:id
+app.put('/reports/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { userId, start, end, summary, sessionsCount, calories } = req.body;
+
+    if (!userId || !start || !end || !summary) {
+      return res.status(400).json({ error: "Faltan datos obligatorios: userId, start, end, summary" });
+    }
+
+    const index = reports.findIndex(r => r.id === id);
+    if (index === -1) return res.status(404).json({ error: "Informe no encontrado" });
+
+    reports[index] = {
+      id,
+      userId: Number(userId),
+      start,
+      end,
+      summary,
+      sessions: sessionsCount || 0,
+      calories: calories || 0
+    };
+
+    res.status(200).json({ message: "Informe actualizado completamente", report: reports[index] });
+  } catch (err) {
+    res.status(500).json({ error: "Error al actualizar informe", details: err.message });
+  }
+});
+
+// PATCH /reports/:id
+app.patch('/reports/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { userId, start, end, summary, sessionsCount, calories } = req.body;
+
+    const report = reports.find(r => r.id === id);
+    if (!report) return res.status(404).json({ error: "Informe no encontrado" });
+
+    if (userId) report.userId = Number(userId);
+    if (start) report.start = start;
+    if (end) report.end = end;
+    if (summary) report.summary = summary;
+    if (sessionsCount !== undefined) report.sessions = sessionsCount;
+    if (calories !== undefined) report.calories = calories;
+
+    res.status(200).json({ message: "Informe actualizado parcialmente", report });
+  } catch (err) {
+    res.status(500).json({ error: "Error al actualizar informe", details: err.message });
+  }
+});
