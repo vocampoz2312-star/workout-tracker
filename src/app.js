@@ -323,3 +323,276 @@ app.get('/users/:id', (req, res) => {
   res.status(200).json(user);
 });
 
+
+// POST /users → usando req.body
+app.post('/users', (req, res) => {
+  const { name, email } = req.body;
+  if (!name || !email) return res.status(400).json({ error: "Faltan datos obligatorios" });
+
+  const newUser = { id: Date.now(), name, email };
+  users.push(newUser);
+
+  res.status(201).json({ message: "Usuario creado", user: newUser });
+});
+
+// ================================= EXERCISES =================================
+// GET /exercises?category=fuerza
+app.get('/exercises', (req, res) => {
+  const { category } = req.query;
+  let result = exercises;
+
+  if (category) {
+    result = exercises.filter(e => e.category.toLowerCase() === category.toLowerCase());
+  }
+
+  res.status(200).json(result);
+});
+
+// GET /exercises/:id
+app.get('/exercises/:id', (req, res) => {
+  const exercise = exercises.find(e => e.id === Number(req.params.id));
+  if (!exercise) return res.status(404).json({ error: "Ejercicio no encontrado" });
+  res.status(200).json(exercise);
+});
+
+// ================================= PLANS =================================
+// GET /plans?userId=1
+app.get('/plans', (req, res) => {
+  const { userId } = req.query;
+  let result = plans;
+
+  if (userId) {
+    result = plans.filter(p => p.userId === Number(userId));
+    if (result.length === 0) {
+      return res.status(404).json({ error: `No hay planes para el usuario con ID ${userId}` });
+    }
+  }
+
+  res.status(200).json(result);
+});
+
+// GET /plans/:id
+app.get('/plans/:id', (req, res) => {
+  const plan = plans.find(p => p.id === Number(req.params.id));
+  if (!plan) return res.status(404).json({ error: "Plan no encontrado" });
+  res.status(200).json(plan);
+});
+
+// ================================= SESSIONS =================================
+// GET /sessions?planId=1
+app.get('/sessions', (req, res) => {
+  const { planId } = req.query;
+  let result = sessions;
+
+  if (planId) {
+    result = sessions.filter(s => s.planId === Number(planId));
+    if (result.length === 0) {
+      return res.status(404).json({ error: `No hay sesiones para el plan con ID ${planId}` });
+    }
+  }
+
+  res.status(200).json(result);
+});
+
+// GET /sessions/:id
+app.get('/sessions/:id', (req, res) => {
+  const session = sessions.find(s => s.id === Number(req.params.id));
+  if (!session) return res.status(404).json({ error: "Sesión no encontrada" });
+  res.status(200).json(session);
+});
+
+// ================================= REPORTS =================================
+// GET /reports?userId=1&from=2025-09-01&to=2025-09-15
+app.get('/reports', (req, res) => {
+  const { userId, from, to } = req.query;
+  let result = reports;
+
+  if (userId) result = result.filter(r => r.userId === Number(userId));
+  if (from && to) result = result.filter(r => r.start >= from && r.end <= to);
+
+  if (result.length === 0) {
+    return res.status(404).json({ error: "No se encontraron informes con esos filtros" });
+  }
+
+  res.status(200).json(result);
+});
+
+// GET /reports/:id con verificación por header
+app.get('/reports/:id', (req, res) => {
+  const apiKey = req.get("X-API-Key");
+  if (!apiKey || apiKey !== "12345") {
+    return res.status(401).json({ error: "Acceso denegado. API Key inválida" });
+  }
+
+  const report = reports.find(r => r.id === Number(req.params.id));
+  if (!report) return res.status(404).json({ error: "Informe no encontrado" });
+
+  res.status(200).json(report);
+});
+
+
+//Cabeceras HTTP – Contexto de seguridad y control de datos
+
+// ================== USERS ==================
+// GET /users → requiere cabecera Authorization
+app.get('/users', (req, res) => {
+  const auth = req.get("Authorization");
+
+  if (!auth || auth !== "Bearer secret123") {
+    return res.status(401).json({ error: "No autorizado. Falta o es inválido el token" });
+  }
+
+  res.set("X-Resource", "Users"); // cabecera de respuesta
+  res.status(200).json(users);
+});
+
+// ================== EXERCISES ==================
+// GET /exercises → cabecera Content-Type debe ser application/json
+app.get('/exercises', (req, res) => {
+  const contentType = req.get("Content-Type");
+
+  if (contentType && contentType !== "application/json") {
+    return res.status(415).json({ error: "Content-Type no soportado. Use application/json" });
+  }
+
+  res.set("X-Resource", "Exercises");
+  res.status(200).json(exercises);
+});
+
+// ================== PLANS ==================
+// GET /plans/:id → requiere API Key personalizada
+app.get('/plans/:id', (req, res) => {
+  const apiKey = req.get("X-API-Key");
+
+  if (!apiKey || apiKey !== "12345") {
+    return res.status(403).json({ error: "Acceso denegado. API Key inválida" });
+  }
+
+  const plan = plans.find(p => p.id === Number(req.params.id));
+  if (!plan) return res.status(404).json({ error: "Plan no encontrado" });
+
+  res.set("X-Checked-By", "WorkoutTrackerAPI");
+  res.status(200).json(plan);
+});
+
+// ================== SESSIONS ==================
+// GET /sessions → requiere Authorization y devuelve cabecera personalizada
+app.get('/sessions', (req, res) => {
+  const auth = req.get("Authorization");
+  if (!auth || !auth.startsWith("Bearer")) {
+    return res.status(401).json({ error: "Token requerido en Authorization" });
+  }
+
+  res.set("X-Access-Level", "Sessions-ReadOnly");
+  res.status(200).json(sessions);
+});
+
+// ================== REPORTS ==================
+// GET /reports/:id → requiere API Key y Authorization
+app.get('/reports/:id', (req, res) => {
+  const apiKey = req.get("X-API-Key");
+  const auth = req.get("Authorization");
+
+  if (!auth || !auth.startsWith("Bearer")) {
+    return res.status(401).json({ error: "No autorizado. Se requiere Bearer token" });
+  }
+
+  if (!apiKey || apiKey !== "12345") {
+    return res.status(403).json({ error: "Acceso denegado. API Key inválida" });
+  }
+
+  const report = reports.find(r => r.id === Number(req.params.id));
+  if (!report) return res.status(404).json({ error: "Informe no encontrado" });
+
+  res.set({
+    "X-Checked-By": "WorkoutTrackerAPI",
+    "X-Security-Level": "High"
+  });
+
+  res.status(200).json(report);
+});
+
+//Estados HTTP – Comunicación del resultado de operaciones
+
+// ================== USERS ==================
+// GET /users/:id
+app.get('/users/:id', (req, res) => {
+  try {
+    const user = users.find(u => u.id === Number(req.params.id));
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({ error: "Error interno del servidor", details: err.message });
+  }
+});
+
+// POST /users
+app.post('/users', (req, res) => {
+  try {
+    const { name, email } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ error: "Faltan datos obligatorios: name y email" });
+    }
+
+    const newUser = { id: Date.now(), name, email };
+    users.push(newUser);
+
+    res.status(201).json({ message: "Usuario creado", user: newUser });
+  } catch (err) {
+    res.status(500).json({ error: "Error al crear usuario", details: err.message });
+  }
+});
+
+// ================== EXERCISES ==================
+// GET /exercises/:id
+app.get('/exercises/:id', (req, res) => {
+  try {
+    const exercise = exercises.find(e => e.id === Number(req.params.id));
+    if (!exercise) return res.status(404).json({ error: "Ejercicio no encontrado" });
+
+    res.status(200).json(exercise);
+  } catch (err) {
+    res.status(500).json({ error: "Error en el servidor", details: err.message });
+  }
+});
+
+// ================== PLANS ==================
+// GET /plans/:id
+app.get('/plans/:id', (req, res) => {
+  try {
+    const plan = plans.find(p => p.id === Number(req.params.id));
+    if (!plan) return res.status(404).json({ error: "Plan no encontrado" });
+
+    res.status(200).json(plan);
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener plan", details: err.message });
+  }
+});
+
+// ================== SESSIONS ==================
+// GET /sessions/:id
+app.get('/sessions/:id', (req, res) => {
+  try {
+    const session = sessions.find(s => s.id === Number(req.params.id));
+    if (!session) return res.status(404).json({ error: "Sesión no encontrada" });
+
+    res.status(200).json(session);
+  } catch (err) {
+    res.status(500).json({ error: "Error interno", details: err.message });
+  }
+});
+
+// ================== REPORTS ==================
+// GET /reports/:id
+app.get('/reports/:id', (req, res) => {
+  try {
+    const report = reports.find(r => r.id === Number(req.params.id));
+    if (!report) return res.status(404).json({ error: "Informe no encontrado" });
+
+    res.status(200).json(report);
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener informe", details: err.message });
+  }
+});
+
